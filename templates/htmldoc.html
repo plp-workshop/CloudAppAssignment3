@@ -3,35 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Storage Simulation</title>
+    <title>Cloud Storage</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Cloud Storage Simulation</h1>
-        
-        <form action="/upload" method="post">
-            <input type="text" name="filename" placeholder="Enter file name" required>
-            <button type="submit">Upload</button>
-        </form>
-        
-        <h2>Stored Files</h2>
-        <ul>
-            {% for file in files %}
-            <li>
-                {{ file }}
-                <form action="/update" method="post" class="inline-form">
-                    <input type="hidden" name="old_name" value="{{ file }}">
-                    <input type="text" name="new_name" placeholder="New name" required>
-                    <button type="submit">Update</button>
-                </form>
-                <form action="/delete" method="post" class="inline-form">
-                    <input type="hidden" name="filename" value="{{ file }}">
-                    <button type="submit">Delete</button>
-                </form>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
+    <h2>Cloud Storage Simulation</h2>
+
+    <form id="uploadForm">
+        <input type="file" id="fileInput" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    <h3>Stored Files</h3>
+    <ul id="fileList"></ul>
+
+    <script>
+        document.getElementById("uploadForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const file = document.getElementById("fileInput").files[0];
+            if (!file) return alert("Select a file!");
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/upload", { method: "POST", body: formData })
+                .then(res => res.json())
+                .then(() => fetchFiles());
+        });
+
+        function fetchFiles() {
+            fetch("/files")
+                .then(res => res.json())
+                .then(data => {
+                    const fileList = document.getElementById("fileList");
+                    fileList.innerHTML = "";
+                    data.files.forEach(file => {
+                        const li = document.createElement("li");
+                        li.innerHTML = `${file} 
+                            <button onclick="renameFile('${file}')">Rename</button>
+                            <button onclick="deleteFile('${file}')">Delete</button>`;
+                        fileList.appendChild(li);
+                    });
+                });
+        }
+
+        function renameFile(oldName) {
+            const newName = prompt("Enter new file name:", oldName);
+            if (newName) {
+                fetch("/rename", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ oldName, newName })
+                }).then(() => fetchFiles());
+            }
+        }
+
+        function deleteFile(fileName) {
+            fetch("/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fileName })
+            }).then(() => fetchFiles());
+        }
+
+        fetchFiles();
+    </script>
 </body>
 </html>

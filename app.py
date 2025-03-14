@@ -1,13 +1,16 @@
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 
 # Simulated storage (in-memory list)
 stored_files = []
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('htmldoc.html')
+
+def page2():
+    return render_template('htmldoc2.html')
 
 @app.route('/files')
 def get_files():
